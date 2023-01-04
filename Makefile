@@ -7,6 +7,7 @@ TARGET=main
 SRCS=main.c
 SRCS+=uart.c
 SRCS+=lcd.c
+SRCS+=timer.c
 
 all:
 	${CC} ${CFLAGS} -o ${TARGET}.bin ${SRCS}
