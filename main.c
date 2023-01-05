@@ -48,8 +48,7 @@ int main (void)
         //lcd_int16(a);
         lcd_uint32( getTick( ) );
         lcd_char(0);
-        SerialP(PSTR("Tick")); SerialULn( getTick( ) );
-
+        SerialP(PSTR("Tick ")); SerialULn( getTick( ) );
         a++;
     }
 }
