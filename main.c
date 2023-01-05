@@ -8,6 +8,7 @@
 
 #include "uart.h"
 #include "lcd.h"
+#include "timer.h"
 
 uint8_t EEMEM testE = 25;
 /* User defined characters */
@@ -20,6 +21,7 @@ int main (void)
     //PD5
     DDRD |= 0x38;
     PORTD = 0x38;
+    timer1Init( );
     uartInit();
     lcd_init();
     sei( );
@@ -43,8 +45,11 @@ int main (void)
         lcd_setCursor(0,1);
         lcd_str("    ");
         lcd_setCursor(0,1);
-        lcd_int16(a);
+        //lcd_int16(a);
+        lcd_uint32( getTick( ) );
         lcd_char(0);
+        SerialP(PSTR("Tick")); SerialULn( getTick( ) );
+
         a++;
     }
 }
