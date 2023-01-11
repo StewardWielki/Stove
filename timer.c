@@ -3,7 +3,8 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 
-volatile uint32_t tick = 10;
+volatile uint32_t tick = 0;
+volatile uint16_t test;
 
 void timer1Init( void )
 {
@@ -14,26 +15,33 @@ void timer1Init( void )
     TIMSK |= 1<<TOIE1;
 }
 
-uint32_t getTick( void )
-{
-    return tick;
-}
-
 uint32_t getTime( void )
 {
     uint32_t result;
-    uint64_t tmp;
+    uint32_t tmp;
 
-    tmp = tick;
-    tmp = (tmp * 524288)/1000;
-    result = (uint32_t)tmp;
-    result += TCNT1 / 125;
+    cli();
+    tmp = TCNT1;
+    result = tick;
+    if( TIFR & 1<<TOV1)
+    {
+        tmp = TCNT1;    //read again to bee sure that this is actual value
+        result += 0x200;
+    }
+    sei();
+    result += tmp >> 7;
 
     return result;
 }
 
+uint16_t getTest( void )
+{
+    return test;
+}
+
 ISR(TIMER1_OVF_vect)
 {
-    tick++;
+    test = TCNT1;
+    tick += 0x200;  //top (0x10000) >> 7
 }
 

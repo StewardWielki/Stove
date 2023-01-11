@@ -46,9 +46,10 @@ int main (void)
         lcd_str("    ");
         lcd_setCursor(0,1);
         //lcd_int16(a);
-        lcd_uint32( getTick( ) );
+        lcd_uint32( getTime( ) );
         lcd_char(0);
-        SerialP(PSTR("Tick ")); SerialULn( getTick( ) );
+        SerialP(PSTR("Tick ")); SerialULn( getTime( ) );
+        SerialP(PSTR("TEST ")); SerialULn( getTest( ) );
         a++;
     }
 }
