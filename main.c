@@ -20,7 +20,7 @@ int main (void)
     uint8_t a2;
     //PD5
     DDRD |= 0x38;
-    PORTD = 0x38;
+    PORTD |= 0x38;
     timer1Init( );
     uartInit();
     lcd_init();
@@ -36,10 +36,11 @@ int main (void)
 
     while(1)
     {
-        _delay_ms (500);
         PORTD &= ~0x10;
         _delay_ms (500);
+        
         PORTD |= 0x10;
+        _delay_ms (500);
 
         SerialP(PSTR("Pamiec flash "));  SerialILn(a);
         lcd_setCursor(0,1);
@@ -49,7 +50,6 @@ int main (void)
         lcd_uint32( getTime( ) );
         lcd_char(0);
         SerialP(PSTR("Tick ")); SerialULn( getTime( ) );
-        SerialP(PSTR("TEST ")); SerialULn( getTest( ) );
         a++;
     }
 }

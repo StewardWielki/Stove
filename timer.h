@@ -6,6 +6,4 @@
 void timer1Init( void );
 uint32_t getTime( void );
 
-uint16_t getTest( void );
-
 #endif  //_TIMER_H
