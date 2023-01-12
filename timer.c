@@ -48,18 +48,36 @@ ISR(TIMER1_OVF_vect)
 
 ISR(TIMER1_COMPA_vect)
 {
-    
+    //enable gate current
 }
 
 ISR(TIMER1_COMPB_vect)
 {
-    
+    //disable gate current
 }
+
+#define EDGE_RISE 1
+#define EDGE_FALL 0
+volatile uint16_t edgeData[2][8];
+volatile uint8_t edgeItem = 0;
+volatile uint8_t edgeCnt;
 
 ISR(TIMER1_CAPT_vect)
 {
-    if(TCCR1B & 1<<ICES1) TCCR1B &= ~(1<<ICES1);
+    uint8_t edge;
+    uint16_t capture = ICR1;
+
+    edge = TCCR1B & 1<<ICES1;
+    if(edge) TCCR1B &= ~(1<<ICES1);
     else TCCR1B |= 1<<ICES1;
     TIFR |= TICIE1; //clear flag to detect very short pulse
 
+    if(edge)
+    {
+        edgeData[EDGE_RISE][edgeItem] = capture;
+    }
+    else
+    {
+        edgeData[EDGE_FALL][edgeItem] = capture;
+    }
 }
