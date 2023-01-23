@@ -56,11 +56,57 @@ ISR(TIMER1_COMPB_vect)
     //disable gate current
 }
 
-#define EDGE_RISE 1
-#define EDGE_FALL 0
-volatile uint16_t edgeData[2][8];
+
+volatile uint16_t risingEdge[4];
+volatile uint16_t fallingEdge[4];
 volatile uint8_t edgeItem = 0;
 volatile uint8_t edgeCnt;
+volatile uint16_t period = 0;
+volatile uint16_t deadTime = 0;
+
+void filterPeriod( int16_t newPeriod )
+{
+    if( period == 0 ) period = newPeriod;
+    else
+    {
+        if( newPeriod > period ) period += (newPeriod - period) >> 3;
+        else  period -= (period - newPeriod) >> 3;
+    }
+}
+
+void filterDeadTime( int16_t newDeadTime )
+{
+    if( deadTime == 0 ) deadTime = newDeadTime;
+    else
+    {
+        if( newDeadTime > deadTime ) deadTime += (newDeadTime - deadTime) >> 3;
+        else deadTime -= (deadTime - newDeadTime) >> 3;
+    }
+}
+
+void calculatePositiveHalf( void )
+{
+    uint8_t i;
+    uint8_t index;
+    uint8_t overflow = 0;
+
+    index = (edgeItem - 1) & 0x03;  //4 samples
+    
+    for( i=0; i<4; i++ )
+    {
+        if( !overflow && risingEdge[ (index +1) & 0x03 ] > risingEdge[ index ] ) overflow = 1; //it means that overflow happen
+
+        if( overflow )
+        {
+            tutaj
+        }
+        else
+        {
+
+        }
+        
+    }
+}
 
 ISR(TIMER1_CAPT_vect)
 {
@@ -74,10 +120,10 @@ ISR(TIMER1_CAPT_vect)
 
     if(edge)
     {
-        edgeData[EDGE_RISE][edgeItem] = capture;
+        risingEdge[edgeItem] = capture;
     }
     else
     {
-        edgeData[EDGE_FALL][edgeItem] = capture;
+        fallingEdge[edgeItem] = capture;
     }
 }
