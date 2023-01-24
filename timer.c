@@ -63,6 +63,7 @@ volatile uint8_t edgeItem = 0;
 volatile uint8_t edgeCnt;
 volatile uint16_t period = 0;
 volatile uint16_t deadTime = 0;
+volatile uint16_t startAngle = 0;
 
 void filterPeriod( int16_t newPeriod )
 {
@@ -84,46 +85,52 @@ void filterDeadTime( int16_t newDeadTime )
     }
 }
 
-void calculatePositiveHalf( void )
+uint16_t calcZeroPoint( uint8_t edge )
 {
     uint8_t i;
     uint8_t index;
+    uint8_t prevIndex;
     uint8_t overflow = 0;
+    uint32_t sum;
+    uint16_t * capData;
 
-    index = (edgeItem - 1) & 0x03;  //4 samples
-    
-    for( i=0; i<4; i++ )
+    if( edge ) capData = risingEdge;
+    else capData = fallingEdge;
+    sum = period;
+    sum *= 6;
+    index = edgeItem;  //edgeItem shows place where will be write new capture value - it is also the oldest captured data - circular buffer
+    sum += capData[index];    //first part of average
+    for( i=0; i<3; i++ )        //tree parts of average
     {
-        if( !overflow && risingEdge[ (index +1) & 0x03 ] > risingEdge[ index ] ) overflow = 1; //it means that overflow happen
-
-        if( overflow )
-        {
-            tutaj
-        }
-        else
-        {
-
-        }
-        
+        prevIndex = index;
+        index = (index+1) & 0x03;
+        if( !overflow && capData[ index ] < capData[ prevIndex ] ) overflow = 1; //it means that overflow happen
+        if( overflow ) sum += 0x10000;
+        sum += capData[index];
     }
+    sum >>= 2;  //divide by 4
+    if( edge ) sum -= deadTime; //sub dead time for rising edge
+    else sum += deadTime;   //add dead time for falling edge
+    return (uint16_t)sum;
 }
 
 ISR(TIMER1_CAPT_vect)
 {
     uint8_t edge;
     uint16_t capture = ICR1;
+    uint16_t compare;
 
-    edge = TCCR1B & 1<<ICES1;
+    edge = (TCCR1B & 1<<ICES1) ? 1 : 0;
     if(edge) TCCR1B &= ~(1<<ICES1);
     else TCCR1B |= 1<<ICES1;
     TIFR |= TICIE1; //clear flag to detect very short pulse
 
-    if(edge)
-    {
-        risingEdge[edgeItem] = capture;
-    }
-    else
-    {
-        fallingEdge[edgeItem] = capture;
-    }
+    if(edge) risingEdge[edgeItem] = capture;
+    else fallingEdge[edgeItem] = capture;
+    edgeItem = (edgeItem+1) & 0x03;   //pointer to 4 elements
+    compare = calcZeroPoint( edge );
+    compare += startAngle;
+    if( edge ) OCR1A = compare;
+    else OCR1B = compare;
+    remember to calculate period and dead time, check if period and dead time have a proper value
 }
