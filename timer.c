@@ -65,13 +65,28 @@ volatile uint16_t period = 0;
 volatile uint16_t deadTime = 0;
 volatile uint16_t startAngle = 0;
 
-void filterPeriod( int16_t newPeriod )
+void calcPeriod( int8_t edge )
 {
-    if( period == 0 ) period = newPeriod;
+    uint16_t tmp;
+    uint8_t i;
+
+    i = edgeItem - 1;
+    i &= 0x03;
+    if( edge )
+    {
+        if( risingEdge[i] > risingEdge[edgeItem] ) tmp = risingEdge[i] - risingEdge[edgeItem];
+        else tmp = risingEdge[edgeItem] - risingEdge[i];
+    }
     else
     {
-        if( newPeriod > period ) period += (newPeriod - period) >> 3;
-        else  period -= (period - newPeriod) >> 3;
+        if( fallingEdge[i] > fallingEdge[edgeItem] ) tmp = fallingEdge[i] - fallingEdge[edgeItem];
+        else tmp = fallingEdge[edgeItem] - fallingEdge[i];
+    }
+    if( period == 0 ) period = tmp;
+    else
+    {
+        if( tmp > period ) period += (tmp - period) >> 3;
+        else  period -= (period - tmp) >> 3;
     }
 }
 
@@ -92,7 +107,7 @@ uint16_t calcZeroPoint( uint8_t edge )
     uint8_t prevIndex;
     uint8_t overflow = 0;
     uint32_t sum;
-    uint16_t * capData;
+    volatile uint16_t * capData;
 
     if( edge ) capData = risingEdge;
     else capData = fallingEdge;
@@ -128,9 +143,10 @@ ISR(TIMER1_CAPT_vect)
     if(edge) risingEdge[edgeItem] = capture;
     else fallingEdge[edgeItem] = capture;
     edgeItem = (edgeItem+1) & 0x03;   //pointer to 4 elements
+    calcPeriod( edge );
     compare = calcZeroPoint( edge );
     compare += startAngle;
     if( edge ) OCR1A = compare;
     else OCR1B = compare;
-    remember to calculate period and dead time, check if period and dead time have a proper value
+    // remember to calculate dead time, check if period and dead time have a proper value
 }
