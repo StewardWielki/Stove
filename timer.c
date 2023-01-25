@@ -5,6 +5,12 @@
 volatile uint32_t tick = 0;
 volatile uint16_t test;
 
+typedef enum
+{
+    FALLING = 0,
+    RASING = 1
+}Edge_t;
+
 void timer1Init( void )
 {
     DDRD &= ~0x40;  //PD6 - input capture
@@ -60,6 +66,8 @@ ISR(TIMER1_COMPB_vect)
 volatile uint16_t risingEdge[4];
 volatile uint16_t fallingEdge[4];
 volatile uint8_t edgeItem = 0;
+volatile uint8_t edgeItemLast = 0x03;
+volatile uint8_t edgeItemPrevious = 0x02;
 volatile uint8_t edgeCnt;
 volatile uint16_t period = 0;
 volatile uint16_t deadTime = 0;
@@ -68,19 +76,16 @@ volatile uint16_t startAngle = 0;
 void calcPeriod( int8_t edge )
 {
     uint16_t tmp;
-    uint8_t i;
 
-    i = edgeItem - 1;
-    i &= 0x03;
     if( edge )
     {
-        if( risingEdge[i] > risingEdge[edgeItem] ) tmp = risingEdge[i] - risingEdge[edgeItem];
-        else tmp = risingEdge[edgeItem] - risingEdge[i];
+        if( risingEdge[edgeItemLast] >= risingEdge[edgeItemPrevious] ) tmp = risingEdge[edgeItemLast] - risingEdge[edgeItemPrevious];
+        else tmp = 0xFFFF - risingEdge[edgeItemPrevious] + 1 + risingEdge[edgeItemLast];
     }
     else
     {
-        if( fallingEdge[i] > fallingEdge[edgeItem] ) tmp = fallingEdge[i] - fallingEdge[edgeItem];
-        else tmp = fallingEdge[edgeItem] - fallingEdge[i];
+        if( fallingEdge[edgeItemLast] >= fallingEdge[edgeItemPrevious] ) tmp = fallingEdge[edgeItemLast] - fallingEdge[edgeItemPrevious];
+        else tmp = 0xFFFF - fallingEdge[edgeItemPrevious] + 1 + fallingEdge[edgeItemLast];
     }
     if( period == 0 ) period = tmp;
     else
@@ -90,17 +95,37 @@ void calcPeriod( int8_t edge )
     }
 }
 
-void filterDeadTime( int16_t newDeadTime )
+void filterDeadTime( Edge_t edge )
 {
-    if( deadTime == 0 ) deadTime = newDeadTime;
-    else
+    uint16_t tmp, halfPeriod;
+
+    if( edge == FALLING )
     {
-        if( newDeadTime > deadTime ) deadTime += (newDeadTime - deadTime) >> 3;
-        else deadTime -= (deadTime - newDeadTime) >> 3;
+        if( fallingEdge[edgeItemLast] >= fallingEdge[edgeItemPrevious] ) halfPeriod = fallingEdge[edgeItemLast] - fallingEdge[edgeItemPrevious];
+        else halfPeriod = 0xFFFF - fallingEdge[edgeItemPrevious] + 1 + fallingEdge[edgeItemLast];
+        halfPeriod >>= 1;  //divide by 2 - half of period
+        if( fallingEdge[edgeItemLast] >= risingEdge[edgeItemLast] ) tmp = fallingEdge[edgeItemLast] - risingEdge[edgeItemLast];
+        else tmp = 0xFFFF - risingEdge[edgeItemLast] + 1 + fallingEdge[edgeItemLast];
+        if( halfPeriod > tmp )  //it must be !
+        {
+            tmp = ( halfPeriod - tmp ) >> 1;
+        }
+        else
+        {
+            //TODO
+            //tmp = default deadtime;
+            //increase error counter
+        }
+        if( deadTime == 0 ) deadTime = tmp;
+        else
+        {
+            if( tmp > deadTime ) deadTime += (tmp - deadTime) >> 3;
+            else deadTime -= (deadTime - tmp) >> 3;
+        } 
     }
 }
 
-uint16_t calcZeroPoint( uint8_t edge )
+uint16_t calcZeroPoint( Edge_t edge )
 {
     uint8_t i;
     uint8_t index;
@@ -131,22 +156,24 @@ uint16_t calcZeroPoint( uint8_t edge )
 
 ISR(TIMER1_CAPT_vect)
 {
-    uint8_t edge;
+    Edge_t edge;
     uint16_t capture = ICR1;
     uint16_t compare;
 
-    edge = (TCCR1B & 1<<ICES1) ? 1 : 0;
-    if(edge) TCCR1B &= ~(1<<ICES1);
+    edge = (TCCR1B & 1<<ICES1) ? RASING : FALLING;
+    if(edge == RASING) TCCR1B &= ~(1<<ICES1);
     else TCCR1B |= 1<<ICES1;
     TIFR |= TICIE1; //clear flag to detect very short pulse
 
-    if(edge) risingEdge[edgeItem] = capture;
+    if(edge == RASING) risingEdge[edgeItem] = capture;
     else fallingEdge[edgeItem] = capture;
+    edgeItemPrevious = edgeItemLast;
+    edgeItemLast = edgeItem;
     edgeItem = (edgeItem+1) & 0x03;   //pointer to 4 elements
     calcPeriod( edge );
     compare = calcZeroPoint( edge );
     compare += startAngle;
-    if( edge ) OCR1A = compare;
+    if( edge == RASING ) OCR1A = compare;
     else OCR1B = compare;
     // remember to calculate dead time, check if period and dead time have a proper value
 }
