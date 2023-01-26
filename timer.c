@@ -46,23 +46,6 @@ uint32_t getTime( void )
     return result;
 }
 
-ISR(TIMER1_OVF_vect)
-{
-    test = TCNT1;
-    tick += 0x200;  //top (0x10000) >> 7
-}
-
-ISR(TIMER1_COMPA_vect)
-{
-    //enable gate current
-}
-
-ISR(TIMER1_COMPB_vect)
-{
-    //disable gate current
-}
-
-
 volatile uint16_t risingEdge[4];
 volatile uint16_t fallingEdge[4];
 volatile uint8_t edgeItem = 0;
@@ -95,7 +78,7 @@ void calcPeriod( int8_t edge )
     }
 }
 
-void filterDeadTime( Edge_t edge )
+void calcDeadTime( Edge_t edge )
 {
     uint16_t tmp, halfPeriod;
 
@@ -154,6 +137,31 @@ uint16_t calcZeroPoint( Edge_t edge )
     return (uint16_t)sum;
 }
 
+
+void testISR( void )
+{
+    Edge_t edge;
+    uint16_t capture = ICR1;
+    uint16_t compare;
+
+    edge = (TCCR1B & 1<<ICES1) ? RASING : FALLING;
+    if(edge == RASING) TCCR1B &= ~(1<<ICES1);
+    else TCCR1B |= 1<<ICES1;
+    TIFR |= TICIE1; //clear flag to detect very short pulse
+
+    if(edge == RASING) risingEdge[edgeItem] = capture;
+    else fallingEdge[edgeItem] = capture;
+    edgeItemPrevious = edgeItemLast;
+    edgeItemLast = edgeItem;
+    edgeItem = (edgeItem+1) & 0x03;   //pointer to 4 elements
+    calcPeriod( edge );
+    calcDeadTime( edge );
+    compare = calcZeroPoint( edge );
+    compare += startAngle;
+    if( edge == RASING ) OCR1A = compare;
+    else OCR1B = compare;
+}
+
 ISR(TIMER1_CAPT_vect)
 {
     Edge_t edge;
@@ -171,9 +179,26 @@ ISR(TIMER1_CAPT_vect)
     edgeItemLast = edgeItem;
     edgeItem = (edgeItem+1) & 0x03;   //pointer to 4 elements
     calcPeriod( edge );
+    calcDeadTime( edge );
     compare = calcZeroPoint( edge );
     compare += startAngle;
     if( edge == RASING ) OCR1A = compare;
     else OCR1B = compare;
-    // remember to calculate dead time, check if period and dead time have a proper value
+    //TODO check if period and dead time have a proper value
+}
+
+ISR(TIMER1_OVF_vect)
+{
+    test = TCNT1;
+    tick += 0x200;  //top (0x10000) >> 7
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+    //enable gate current
+}
+
+ISR(TIMER1_COMPB_vect)
+{
+    //disable gate current
 }
