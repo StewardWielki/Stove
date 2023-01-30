@@ -2,7 +2,8 @@ MCU=atmega32
 F_CPU=8000000
 CC=avr-gcc
 OBJCOPY=avr-objcopy
-CFLAGS=-std=c99 -Wall -g -Os -mmcu=${MCU} -DF_CPU=${F_CPU} -I.
+CFLAGS=-std=c99 -Wall -g -O1 -mmcu=${MCU} -DF_CPU=${F_CPU} -I.
+#CFLAGS=-std=c99 -Wall -g -O3 -mmcu=${MCU} -DF_CPU=${F_CPU} -I.
 TARGET=main
 SRCS=main.c
 SRCS+=uart.c
