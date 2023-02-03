@@ -9,6 +9,7 @@
 #include "uart.h"
 #include "lcd.h"
 #include "timer.h"
+#include "analog.h"
 
 uint8_t EEMEM testE = 25;
 /* User defined characters */
@@ -25,6 +26,7 @@ int main (void)
     timer1Init( );
     uartInit();
     lcd_init();
+    analogInit();
     sei( );
     lcd_backlight( 1 );
     lcd_createChar_P(0, thermometer);

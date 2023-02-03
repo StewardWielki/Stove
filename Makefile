@@ -9,6 +9,7 @@ SRCS=main.c
 SRCS+=uart.c
 SRCS+=lcd.c
 SRCS+=timer.c
+SRCS+=analog.c
 
 all:
 	${CC} ${CFLAGS} -o ${TARGET}.elf ${SRCS}
