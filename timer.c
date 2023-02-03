@@ -138,31 +138,7 @@ uint16_t calcZeroPoint( Edge_t edge )
 }
 
 
-void testISR( void )
-{
-    Edge_t edge;
-    uint16_t capture = ICR1;
-    uint16_t compare;
-
-    edge = (TCCR1B & 1<<ICES1) ? RASING : FALLING;
-    if(edge == RASING) TCCR1B &= ~(1<<ICES1);
-    else TCCR1B |= 1<<ICES1;
-    TIFR |= TICIE1; //clear flag to detect very short pulse
-
-    if(edge == RASING) risingEdge[edgeItem] = capture;
-    else fallingEdge[edgeItem] = capture;
-    edgeItemPrevious = edgeItemLast;
-    edgeItemLast = edgeItem;
-    edgeItem = (edgeItem+1) & 0x03;   //pointer to 4 elements
-    calcPeriod( edge );
-    calcDeadTime( edge );
-    compare = calcZeroPoint( edge );
-    compare += startAngle;
-    if( edge == RASING ) OCR1A = compare;
-    else OCR1B = compare;
-}
-
-ISR(TIMER1_CAPT_vect)
+ISR(TIMER1_CAPT_vect)       //max 800 uP cycles
 {
     Edge_t edge;
     uint16_t capture = ICR1;

@@ -52,16 +52,6 @@ int main (void)
         lcd_char(0);
         SerialP(PSTR("Tick ")); SerialULn( getTime( ) );
         a++;
-
-        {
-            uint16_t t1, t2;
-
-            t1 = TCNT1;
-            testISR( );
-            t2 = TCNT1;
-            SerialP(PSTR("Tick ")); SerialU( t1 ); SerialULn( t2 );
-
-        }
     }
 }
 
