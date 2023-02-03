@@ -137,12 +137,13 @@ uint16_t calcZeroPoint( Edge_t edge )
     return (uint16_t)sum;
 }
 
-
+#define TRIAC_GATE_ON_TIME (480/8)    //480 us / (64/8)
+#define TURN_OFF_MARGIN (480/8)
 ISR(TIMER1_CAPT_vect)       //max 800 uP cycles
 {
     Edge_t edge;
     uint16_t capture = ICR1;
-    uint16_t compare;
+    uint16_t zeroPoint;
 
     edge = (TCCR1B & 1<<ICES1) ? RASING : FALLING;
     if(edge == RASING) TCCR1B &= ~(1<<ICES1);
@@ -156,11 +157,11 @@ ISR(TIMER1_CAPT_vect)       //max 800 uP cycles
     edgeItem = (edgeItem+1) & 0x03;   //pointer to 4 elements
     calcPeriod( edge );
     calcDeadTime( edge );
-    compare = calcZeroPoint( edge );
-    compare += startAngle;
-    if( edge == RASING ) OCR1A = compare;
-    else OCR1B = compare;
-    //TODO check if period and dead time have a proper value
+    zeroPoint = calcZeroPoint( edge );
+    OCR1A = zeroPoint + startAngle;    //triac turn on, startAngle is power
+    //OCR1B = zeroPoint + (period>>1 - TURN_OFF_MARGIN);    //triac turn off
+    OCR1B = OCR1A + TRIAC_GATE_ON_TIME;    //triac turn off
+    //TODO check if period and dead time have a proper value, in specific range !
 }
 
 ISR(TIMER1_OVF_vect)
