@@ -10,6 +10,7 @@
 #include "lcd.h"
 #include "timer.h"
 #include "analog.h"
+#include "ds18b20.h"
 
 uint8_t EEMEM testE = 25;
 /* User defined characters */
@@ -19,6 +20,7 @@ int main (void)
 {
     int a = -10;
     uint8_t a2;
+    int32_t temp;
     
     //PD5
     DDRD |= 0x38;
@@ -27,7 +29,7 @@ int main (void)
     uartInit();
     lcd_init();
     analogInit();
-    sei( );
+    // sei( );
     lcd_backlight( 1 );
     lcd_createChar_P(0, thermometer);
 
@@ -36,6 +38,12 @@ int main (void)
     lcd_str_P(PSTR("Sterownik "));
     a2=eeprom_read_byte (&testE);
     lcd_uint16(a2);
+
+
+
+    
+
+sei( );
 
     while(1)
     {
@@ -54,6 +62,21 @@ int main (void)
         lcd_char(0);
         SerialP(PSTR("Tick ")); SerialULn( getTime( ) );
         a++;
+        {
+            set_resolution(CONFIG12);
+            req_temperature();
+            _delay_ms(1000);							//wait conversion time
+            temp = get_temperature(CORRECTION12, SHIFT12);
+            
+            if(temp == 0xFFFF)
+            {
+                SerialP(PSTR("DS18B20: not ready"));
+            }
+            else
+            {
+                SerialP(PSTR("DS18B20: ")); SerialILn(temp);
+            }
+        }
     }
 }
 
