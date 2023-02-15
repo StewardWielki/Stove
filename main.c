@@ -66,16 +66,18 @@ sei( );
             set_resolution(CONFIG12);
             req_temperature();
             _delay_ms(1000);							//wait conversion time
-            temp = get_temperature(CORRECTION12, SHIFT12);
+            temp = get_temperature( );
             
-            if(temp == 0xFFFF)
+            /*if(temp == 0xFFFF)
             {
                 SerialP(PSTR("DS18B20: not ready"));
             }
             else
-            {
+            {*/
+            temp *= 10;
+            temp >>= 4;
                 SerialP(PSTR("DS18B20: ")); SerialILn(temp);
-            }
+            /*}*/
         }
     }
 }

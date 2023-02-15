@@ -12,15 +12,15 @@
 void bus_init()
 {
 	WIRE_DDR |= (1<<WIRE);						//set output
-	WIRE_PORT &= (0<<WIRE);
+	WIRE_PORT &= ~(1<<WIRE);
 	_delay_us(DELAY_RESET);
-	WIRE_DDR &= (0<<WIRE);						//set input
+	WIRE_DDR &= ~(1<<WIRE);						//set input
 	_delay_us(DELAY_RESET);
 }
 
 void bus_write_bit(char bit)
 {
-	WIRE_PORT &= (0<<WIRE);
+	WIRE_PORT &= ~(1<<WIRE);
 	
 	if(bit)
 	{
@@ -45,15 +45,15 @@ void bus_write_byte(char byte)
 	{
 		bus_write_bit(byte & (1<<i) );
 	}
-	WIRE_DDR &= (0<<WIRE);
+	WIRE_DDR &= ~(1<<WIRE);
 }
 
 uint8_t bus_read_bit()
 {
 	
 	WIRE_DDR |= (1<<WIRE);
-	WIRE_PORT &= (0<<WIRE); //initiate timeslot
-	WIRE_DDR &= (0<<WIRE);
+	WIRE_PORT &= ~(1<<WIRE); //initiate timeslot
+	WIRE_DDR &= ~(1<<WIRE);
 	
 	_delay_us(ONE_DUR);
 	
@@ -79,33 +79,29 @@ void req_temperature()
 	bus_init();
 	bus_write_byte(ROMSKIP);
 	bus_write_byte(TCONVERT);
+	WIRE_PORT |= (1<<WIRE);
+	WIRE_DDR |= (1<<WIRE);	//parasite power ON
 	bus_init();
 }
 
-int16_t get_temperature(uint8_t correction, uint8_t shift)
+int16_t get_temperature( void )
 {
-	if(!bus_read_bit())							//check if sensor is still converting
+	//disable in parasite mode
+	/*if(!bus_read_bit())							//check if sensor is still converting
 	{
 		return 0xFFFF;
-	}
-	
-	int16_t ret=0x0000;
-	
+	}*/
 
-	
+	int16_t ret=0x0000;
+	WIRE_DDR &= ~(1<<WIRE); //parasite power OFF
+
 	bus_write_byte(ROMSKIP);
 	bus_write_byte(SCRATCHPADREAD);
 	
 	ret |= bus_read_byte();
 	ret |= bus_read_byte()<<8;					//read 2nd byte
 	bus_init();									//stop reading
-	
-	ret = ret >> shift;							//shift fpa
-	
-	ret*=10;
-	return ret >> 4;
-	//return ret*correction;						//correction fpa
-
+	return ret;
 }
 
 
