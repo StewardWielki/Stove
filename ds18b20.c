@@ -79,9 +79,9 @@ void req_temperature()
 	bus_init();
 	bus_write_byte(ROMSKIP);
 	bus_write_byte(TCONVERT);
+	// bus_init();
 	WIRE_PORT |= (1<<WIRE);
 	WIRE_DDR |= (1<<WIRE);	//parasite power ON
-	bus_init();
 }
 
 int16_t get_temperature( void )
@@ -93,8 +93,9 @@ int16_t get_temperature( void )
 	}*/
 
 	int16_t ret=0x0000;
-	WIRE_DDR &= ~(1<<WIRE); //parasite power OFF
+	//WIRE_DDR &= ~(1<<WIRE); //parasite power OFF
 
+	bus_init();
 	bus_write_byte(ROMSKIP);
 	bus_write_byte(SCRATCHPADREAD);
 	
