@@ -53,32 +53,45 @@ sei( );
         PORTD |= 0x10;
         _delay_ms (500);
 
-        SerialP(PSTR("Pamiec flash "));  SerialILn(a);
+        set_resolution(CONFIG12);
+        req_temperature();
+        _delay_ms(1000);							//wait conversion time
+        temp = get_temperature( );
+        temp *= 10;
+        temp >>= 4;
         lcd_setCursor(0,1);
-        lcd_str("    ");
-        lcd_setCursor(0,1);
-        //lcd_int16(a);
-        lcd_uint32( getTime( ) );
-        lcd_char(0);
-        SerialP(PSTR("Tick ")); SerialULn( getTime( ) );
-        a++;
-        {
-            set_resolution(CONFIG12);
-            req_temperature();
-            _delay_ms(1000);							//wait conversion time
-            temp = get_temperature( );
+        lcd_str_P(PSTR("Temp "));
+        lcd_int16( temp/10 );
+        lcd_str_P(PSTR("."));
+        lcd_int16( temp%10 );
+        lcd_str_P(PSTR(" C"));
+
+        //  SerialP(PSTR("Pamiec flash "));  SerialILn(a);
+        // lcd_setCursor(0,1);
+        // lcd_str("    ");
+        // lcd_setCursor(0,1);
+        // //lcd_int16(a);
+        // lcd_uint32( getTime( ) );
+        // lcd_char(0);
+        // SerialP(PSTR("Tick ")); SerialULn( getTime( ) );
+        // a++;
+        // {
+        //     set_resolution(CONFIG12);
+        //     req_temperature();
+        //     _delay_ms(1000);							//wait conversion time
+        //     temp = get_temperature( );
             
-            /*if(temp == 0xFFFF)
-            {
-                SerialP(PSTR("DS18B20: not ready"));
-            }
-            else
-            {*/
-            temp *= 10;
-            temp >>= 4;
-                SerialP(PSTR("DS18B20: ")); SerialILn(temp);
-            /*}*/
-        }
+        //     /*if(temp == 0xFFFF)
+        //     {
+        //         SerialP(PSTR("DS18B20: not ready"));
+        //     }
+        //     else
+        //     {*/
+        //     temp *= 10;
+        //     temp >>= 4;
+        //         SerialP(PSTR("DS18B20: ")); SerialILn(temp);
+        //     /*}*/
+        // }
     }
 }
 
