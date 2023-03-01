@@ -18,7 +18,7 @@ const uint8_t PROGMEM thermometer[] = {4,10,10,10,17,31,31,14};
 
 int main (void)
 {
-    int a = -10;
+    //int a = -10;
     uint8_t a2;
     int32_t temp;
     

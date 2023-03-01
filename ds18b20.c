@@ -7,6 +7,7 @@
 #include <avr/io.h>
 #include "ds18b20.h"
 #include <util/delay.h>
+#include <avr/interrupt.h>
 
 
 void bus_init()
@@ -22,6 +23,7 @@ void bus_write_bit(char bit)
 {
 	WIRE_PORT &= ~(1<<WIRE);
 	
+	cli( );
 	if(bit)
 	{
 		_delay_us(ONE_DUR);
@@ -34,7 +36,7 @@ void bus_write_bit(char bit)
 		_delay_us(ZERO_DUR);
 		WIRE_PORT |= (1<<WIRE);
 	}
-	
+	sei( );
 	
 }
 
@@ -50,14 +52,16 @@ void bus_write_byte(char byte)
 
 uint8_t bus_read_bit()
 {
-	
+	uint8_t result;
+	cli( );
 	WIRE_DDR |= (1<<WIRE);
 	WIRE_PORT &= ~(1<<WIRE); //initiate timeslot
 	WIRE_DDR &= ~(1<<WIRE);
 	
 	_delay_us(ONE_DUR);
-	
-	return ((WIRE_PIN & (1<<WIRE))>>WIRE);		//read bit value on bus
+	result = ((WIRE_PIN & (1<<WIRE))>>WIRE); 		//read bit value on bus
+	sei( );
+	return result;
 }
 
 uint8_t bus_read_byte()
@@ -117,3 +121,22 @@ void set_resolution(uint8_t configuration)
 	bus_init();
 }
 
+enum
+{
+	dsInit,
+	dsSetRes,
+	dsReqTemp,
+	dsWaitForMeas,
+	dsReadTemp,
+	dsLast
+} ds18b20_State;
+
+void ds18b20_main( void )
+{
+	switch( ds18b20_State )
+	{
+		default:
+		case dsInit:
+		break;
+	}
+}
