@@ -12,7 +12,7 @@
 #include "analog.h"
 #include "ds18b20.h"
 
-uint8_t EEMEM testE = 25;
+uint8_t EEMEM testE = 23;
 /* User defined characters */
 const uint8_t PROGMEM thermometer[] = {4,10,10,10,17,31,31,14};
 
@@ -20,7 +20,7 @@ int main (void)
 {
     //int a = -10;
     uint8_t a2;
-    int32_t temp;
+    int32_t temp=0;
     
     //PD5
     DDRD |= 0x38;
@@ -56,9 +56,10 @@ sei( );
         set_resolution(CONFIG12);
         req_temperature();
         _delay_ms(1000);							//wait conversion time
-        temp = get_temperature( );
-        temp *= 10;
-        temp >>= 4;
+        // temp = get_temperature( );
+        // temp *= 10;
+        // temp >>= 4;
+        temp += 2;
         lcd_setCursor(0,1);
         lcd_str_P(PSTR("Temp "));
         lcd_int16( temp/10 );
@@ -103,3 +104,15 @@ avrdude: safemode: hfuse changed! Was 0, and is now d6
 Would you like this fuse to be changed back? [y/n] y
 avrdude: safemode: and is now rescued
 avrdude: safemode: Fuses OK (E:FF, H:00, L:00)*/
+
+
+/*
+sudo bluetoothctl
+#power on
+#agent on
+#scan on
+#scan of
+sudo killall rfcomm
+sudo rfcomm connect /dev/rfcomm0 20:15:10:12:01:58 1 &
+avrdude -p m32 -c arduino -P /dev/rfcomm0 -b 9600 -U flash:w:main.hex
+*/
