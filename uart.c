@@ -168,10 +168,13 @@ ISR(USART_RXC_vect)
     else lastData = UART_RX_BUFF_SIZE-1;
     if(uartRxData[lastData] == 0x30 && uartRxData[headRx] == 0x20)
     {
-        //go to bootloader
-        //WDTCR = 1<<WDE;
-        wdt_enable(WDTO_15MS);
-        wdt_reset();
+        // //go to bootloader
+        // //WDTCR = 1<<WDE;
+        // wdt_enable(WDTO_15MS);
+        // wdt_reset();
+        // while(1);
+        DDRC |= 0x20;   //PC5
+        PORTC &= ~0x20;
     }
 
 
