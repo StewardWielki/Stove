@@ -66,7 +66,7 @@ sei( );
         lcd_int16( temp%10 );
         lcd_str_P(PSTR(" C"));
 
-        //  SerialP(PSTR("Pamiec flash "));  SerialILn(a);
+        SerialP(PSTR("Pamiec flash "));  SerialILn(5);
         // lcd_setCursor(0,1);
         // lcd_str("    ");
         // lcd_setCursor(0,1);
