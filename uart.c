@@ -1,22 +1,28 @@
-#include <inttypes.h>
+#include <inttypes.h>uartTxData
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 
 #define UART_TX_BUFF_SIZE   128
-volatile uint8_t tail = 0;
-volatile uint8_t head = 0;
-uint8_t uartData[UART_TX_BUFF_SIZE];
+volatile uint8_t tailRx = 0;
+volatile uint8_t headRx = 0;
+uint8_t uartTxData[UART_TX_BUFF_SIZE];
+
+#define UART_RX_BUFF_SIZE   128
+volatile uint8_t tailTx = 0;
+volatile uint8_t headTx = 0;
+uint8_t uartRxData[UART_RX_BUFF_SIZE];
 
 void uartInit( void )
 {
     DDRD |= 0x02;
     DDRD &= ~0x1;
     UBRRH = 0;
-    UBRRL = 8;
+    UBRRL = 103;//    9600
     UCSRA = 1<<U2X;
     UCSRC= 1<<URSEL | 1<<UCSZ1 | 1<<UCSZ0;
-    UCSRB = 1<<TXEN | 1<<RXEN;
+    UCSRB = 1<<TXEN | 1<<RXEN | 1<<RXCIE;
 }
 
 void uartSendByte( uint8_t data )
@@ -30,17 +36,17 @@ void uartWriteData( const char *data, uint8_t len )
 
     for( uint8_t i = 0; i < len; i++ )
     {
-        uartData[ head ] = data[ i ];
+        uartTxData[ headRx ] = data[ i ];
         UCSRB |= 1<<UDRIE;
-        tmp = head;
+        tmp = headRx;
         tmp++;
         tmp = tmp%UART_TX_BUFF_SIZE;
-        if( tmp == tail )   //no space in circular buffer
+        if( tmp == tailRx )   //no space in circular buffer
         {
-            uartData[ head ] = '~'; //this means overflow
+            uartTxData[ headRx ] = '~'; //this means overflow
             break;
         }
-        else head = tmp;
+        else headRx = tmp;
     }
 }
 
@@ -116,17 +122,17 @@ void SerialP( const char *text )
 
     while( (c = pgm_read_byte(text++)) )
     {
-        uartData[ head ] = c;
+        uartTxData[ headRx ] = c;
         UCSRB |= 1<<UDRIE;
-        tmp = head;
+        tmp = headRx;
         tmp++;
         tmp = tmp%UART_TX_BUFF_SIZE;
-        if( tmp == tail )   //no space in circular buffer
+        if( tmp == tailRx )   //no space in circular buffer
         {
-            uartData[ head ] = '~'; //this means overflow
+            uartTxData[ headRx ] = '~'; //this means overflow
             break;
         }
-        else head = tmp;
+        else headRx = tmp;
     }
 }
 
@@ -140,14 +146,59 @@ void SerialPLn( const char *text )
 
 ISR(USART_UDRE_vect)
 {
-    if( tail == head )  //no data to send
+    if( tailRx == headRx )  //no data to send
     {
         UCSRB &= ~(1<<UDRIE);
     }
     else
     {
-        UDR = uartData[tail];
-        tail++;
-        tail = tail%UART_TX_BUFF_SIZE;
+        UDR = uartTxData[tailRx];
+        tailRx++;
+        tailRx = tailRx%UART_TX_BUFF_SIZE;
     }
 }
+
+ISR(USART_RXC_vect)
+{
+    uint8_t lastData;
+
+    uartRxData[headRx] = UDR;
+
+    if(headRx) lastData = headRx - 1;
+    else lastData = UART_RX_BUFF_SIZE-1;
+    if(uartRxData[lastData] == 0x30 && uartRxData[headRx] == 0x20)
+    {
+        //go to bootloader
+        //WDTCR = 1<<WDE;
+        wdt_enable(WDTO_15MS);
+        wdt_reset();
+    }
+
+
+    headRx++;
+    headRx = headRx%UART_RX_BUFF_SIZE;
+    if( tailRx == headRx )
+    {
+        tailRx++;           //drop the oldest data
+        tailRx = tailRx%UART_RX_BUFF_SIZE;
+    }
+}
+
+uint8_t uartReadData( uint8_t *data, uint8_t maxLen )
+{
+    uint8_t i;
+
+    for( i=0; i<maxLen; i++)
+    {
+        if( headRx == tailRx ) break;
+        else
+        {
+            data[i] = uartRxData[tailRx];
+            tailRx++;
+            tailRx = tailRx%UART_RX_BUFF_SIZE;
+        }
+    }
+
+    return i;
+}
+

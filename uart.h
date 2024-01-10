@@ -6,6 +6,7 @@
 void uartInit( void );
 void uartSendByte( uint8_t data );
 void uartWriteData( const char *data, uint8_t len );
+uint8_t uartReadData( uint8_t *data, uint8_t maxLen );
 void SerialU( uint16_t x );
 void SerialULn( uint16_t x );
 void SerialI( int16_t x );
