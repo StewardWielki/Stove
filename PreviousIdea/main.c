@@ -10,6 +10,7 @@
 #include "lcd.h"
 #include "timer.h"
 #include "analog.h"
+#include "ds18b20.h"
 
 uint8_t EEMEM testE = 23;
 /* User defined characters */
@@ -52,7 +53,12 @@ sei( );
         PORTD |= 0x10;
         _delay_ms (500);
 
-
+        set_resolution(CONFIG12);
+        req_temperature();
+        _delay_ms(1000);							//wait conversion time
+        // temp = get_temperature( );
+        // temp *= 10;
+        // temp >>= 4;
         temp += 2;
         lcd_setCursor(0,1);
         lcd_str_P(PSTR("Temp "));

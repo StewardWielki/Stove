@@ -10,7 +10,7 @@ SRCS+=uart.c
 SRCS+=lcd.c
 SRCS+=timer.c
 SRCS+=analog.c
-SRCS+=ds18b20.c
+#SRCS+=ds18b20.c
 
 all:
 	${CC} ${CFLAGS} -o ${TARGET}.elf ${SRCS}

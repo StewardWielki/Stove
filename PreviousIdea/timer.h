@@ -4,6 +4,6 @@
 #include <avr/io.h>
 
 void timer1Init( void );
-//uint32_t getTime( void );
+uint32_t getTime( void );
 
 #endif  //_TIMER_H
