@@ -24,7 +24,7 @@ int main (void)
     //PD5
     DDRD |= 0x38;
     PORTD |= 0x38;
-    timer1Init( );
+    timersInit( );
     uartInit();
     lcd_init();
     analogInit();
@@ -53,7 +53,7 @@ sei( );
         _delay_ms (500);
 
 
-        temp += 2;
+        temp = getTick();
         lcd_setCursor(0,1);
         lcd_str_P(PSTR("Temp "));
         lcd_int16( temp/10 );

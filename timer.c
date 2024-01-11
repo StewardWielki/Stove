@@ -3,51 +3,77 @@
 #include <avr/interrupt.h>
 
 volatile uint32_t tick = 0;
-volatile uint16_t test;
 
-typedef enum
+/*
+Timers:
+T0 - system tick 1 ms ( prescaler 64, top 125)
+T1 - blower PWM
+T2 - keyboard scan tick
+*/
+
+static void timer0Init( void )
 {
-    FALLING = 0,
-    RASING = 1
-}Edge_t;
+    TCCR0 = 1<<WGM01 | 1<<CS01 | 1<<CS00;  //CTC mode, prescaller = 64
+    TCNT0 = 0;
+    OCR0 = 125;
+    TCCR0 = 1 <<WGM01 | 1<<CS01 | 1<<CS00;  //CTC mode, prescaller = 64
+    TIFR |= 1<<OCF0 | 1<<TOV0;
+    TIMSK |= 1<<OCIE0;
+}
 
-void timer1Init( void )
+static void timer1Init( void )
 {
-    DDRD &= ~0x40;  //PD6 - input capture
-    DDRD |= 0x40;  //PD6 - input capture
-    PORTD |= 0x40;  //PD6 - pull up
-
-    TCNT1 = 0;
+/*   TCNT1 = 0;
     TCCR1A = 0; //NORMAL mode
     TCCR1B = 1<<ICNC1 | 1<<ICES1 | 1<<CS11 | 1<<CS10;  //Input Capture Noise Canceler, clk/64
     TIFR |= 1<<ICF1 | 1<<OCF1A | 1<<OCF1B | TOV1;
     TIMSK |= 1<<TOIE1 | 1<<OCIE1A | 1<< OCIE1B | 1<<TICIE1;
 
     OCR1A = 0x3FFF;
-    OCR1B = 0xAFFF;
+    OCR1B = 0xAFFF;*/
 }
 
-// uint32_t getTime( void )
-// {
-//     uint32_t result;
-//     uint32_t tmp;
+static void timer2Init( void )
+{
+/*    TCNT2 = 0;
+    OCR2 = 100;
+    TCCR2 = (1<<WGM21) | (1<<CS22);  //CTC mode, prescaller = 64
+    // TCCR2 = 0x08;
+    // TCCR2 = 1<<CS22;  //CTC mode, prescaller = 64
+    TIFR |= 1<<OCF2 | 1<<TOV2;
+    TIMSK |= 1<<OCIE2;
+    */
+}
 
-//     cli();
-//     tmp = TCNT1;
-//     result = tick;
-//     if( TIFR & 1<<TOV1)
-//     {
-//         tmp = TCNT1;    //read again to bee sure that this is actual value
-//         result += 0x200;
-//     }
-//     sei();
-//     result += tmp >> 7;
-
-//     return result;
-// }
+void timersInit( void )
+{
+    timer0Init( );
+    timer1Init( );   
+    timer2Init( );
+}
 
 
-ISR(TIMER1_CAPT_vect)       //max 800 uP cycles
+ISR(TIMER0_COMP_vect)
+{
+    tick++;
+}
+/*
+ISR(TIMER2_OVF_vect)
+{
+    tick++;
+}
+
+ISR(TIMER2_COMP_vect)
+{
+    tick++;
+}*/
+
+uint32_t getTick( void )
+{
+    return tick;
+}
+
+/*ISR(TIMER1_CAPT_vect)       //max 800 uP cycles
 {
     
 }
@@ -67,3 +93,4 @@ ISR(TIMER1_COMPB_vect)
 {
     //disable gate current
 }
+*/
