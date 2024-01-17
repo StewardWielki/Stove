@@ -44,11 +44,15 @@ int main (void)
 
 sei( );
 
+    
+
     while(1)
     {
+        setBlowerSpeed(0);
         PORTD &= ~0x10;
         _delay_ms (500);
         
+        setBlowerSpeed(100);
         PORTD |= 0x10;
         _delay_ms (500);
 

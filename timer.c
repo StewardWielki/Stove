@@ -21,28 +21,24 @@ static void timer0Init( void )
     TIMSK |= 1<<OCIE0;
 }
 
-static void timer1Init( void )
+static void timer1Init( void )  /*10 kHz, PWM=100% == zero power, PWM=0% == max power*/
 {
-/*   TCNT1 = 0;
-    TCCR1A = 0; //NORMAL mode
-    TCCR1B = 1<<ICNC1 | 1<<ICES1 | 1<<CS11 | 1<<CS10;  //Input Capture Noise Canceler, clk/64
-    TIFR |= 1<<ICF1 | 1<<OCF1A | 1<<OCF1B | TOV1;
-    TIMSK |= 1<<TOIE1 | 1<<OCIE1A | 1<< OCIE1B | 1<<TICIE1;
-
-    OCR1A = 0x3FFF;
-    OCR1B = 0xAFFF;*/
+    TCNT1 = 0;
+    TCCR1A = 1<<COM1A1 | 1<<COM1A0; //NORMAL mode
+    OCR1A = 20; //2.5%
+    ICR1 = 400;
+    TCCR1B = 1<<WGM13 | 1<<CS10;  //Input Capture Noise Canceler, clk/1
+    TIFR |= 1<<OCF1A | 1<<OCF1B | TOV1;
+    TIMSK &= ~(1<<TOIE1 | 1<<OCIE1A | 1<< OCIE1B | 1<<TICIE1);
 }
 
 static void timer2Init( void )
 {
-/*    TCNT2 = 0;
-    OCR2 = 100;
-    TCCR2 = (1<<WGM21) | (1<<CS22);  //CTC mode, prescaller = 64
-    // TCCR2 = 0x08;
-    // TCCR2 = 1<<CS22;  //CTC mode, prescaller = 64
+    TCNT2 = 0;
+    OCR2 = 78;
+    TCCR2 = (1<<WGM21) | (1<<CS22) | (1<<CS21) | (1<<CS20);  //CTC mode, prescaller = 1024
     TIFR |= 1<<OCF2 | 1<<TOV2;
     TIMSK |= 1<<OCIE2;
-    */
 }
 
 void timersInit( void )
@@ -62,11 +58,18 @@ ISR(TIMER2_OVF_vect)
 {
     tick++;
 }
-
+*/
 ISR(TIMER2_COMP_vect)
 {
-    tick++;
-}*/
+    static uint8_t cnt = 0;
+
+    if( cnt++ > 99 )
+    {
+        cnt = 0;
+        if( PORTD & 0x08 ) PORTD &= ~0x08;
+        else PORTD |= 0x08;
+    }
+}
 
 uint32_t getTick( void )
 {
@@ -94,3 +97,14 @@ ISR(TIMER1_COMPB_vect)
     //disable gate current
 }
 */
+
+void setBlowerSpeed( uint8_t duty )
+{
+    uint16_t tmp;
+
+    if( duty > 75 ) duty = 75;
+    tmp = ICR1;
+    tmp *= (uint16_t)duty;
+    tmp /= 100;
+    OCR1A = tmp; 
+}

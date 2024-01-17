@@ -20,13 +20,13 @@ all:
 
 flash:
 #	avrdude -p ${MCU} -c usbasp -U flash:w:${TARGET}.hex:i -F -P usb
-#	avrdude -p ${MCU} -c arduino -P COM25 -b9600 -U flash:w:${TARGET}.hex:i -F
-	avrdude -p ${MCU} -c arduino -P /dev/rfcomm0 -b9600 -U flash:w:${TARGET}.hex:i -F
+	avrdude -p ${MCU} -c arduino -P COM25 -b9600 -U flash:w:${TARGET}.hex:i -F
+#	avrdude -p ${MCU} -c arduino -P /dev/rfcomm0 -b9600 -U flash:w:${TARGET}.hex:i -F
 
 eeprom:
 #	avrdude -p ${MCU} -c usbasp -U eeprom:w:$(TARGET).eep -F -P usb
-#	avrdude -p ${MCU} -c arduino -P COM25 -b9600 -U eeprom:w:$(TARGET).eep -F
-	avrdude -p ${MCU} -c arduino -P /dev/rfcomm0 -b9600 -U eeprom:w:$(TARGET).eep -F
+	avrdude -p ${MCU} -c arduino -P COM25 -b9600 -U eeprom:w:$(TARGET).eep -F
+#	avrdude -p ${MCU} -c arduino -P /dev/rfcomm0 -b9600 -U eeprom:w:$(TARGET).eep -F
 
 clean:
 	rm -f *.bin *.hex *.eep *.elf
