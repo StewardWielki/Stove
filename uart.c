@@ -1,4 +1,4 @@
-#include <inttypes.h>uartTxData
+#include <inttypes.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -13,6 +13,8 @@ uint8_t uartTxData[UART_TX_BUFF_SIZE];
 volatile uint8_t tailTx = 0;
 volatile uint8_t headTx = 0;
 uint8_t uartRxData[UART_RX_BUFF_SIZE];
+
+extern volatile int32_t temp;
 
 void uartInit( void )
 {
@@ -158,15 +160,54 @@ ISR(USART_UDRE_vect)
     }
 }
 
+// ISR(USART_RXC_vect)
+// {
+//     uint8_t lastData;
+
+//     uartRxData[headRx] = UDR;
+
+//     if(headRx) lastData = headRx - 1;
+//     else lastData = UART_RX_BUFF_SIZE-1;
+//     if(uartRxData[lastData] == 0x30 && uartRxData[headRx] == 0x20)
+//     {
+//         // //go to bootloader
+//         // //WDTCR = 1<<WDE;
+//         // wdt_enable(WDTO_15MS);
+//         // wdt_reset();
+//         // while(1);
+//         DDRC |= 0x20;   //PC5
+//         PORTC &= ~0x20;
+//     }
+
+
+//     headRx++;
+//     headRx = headRx%UART_RX_BUFF_SIZE;
+//     if( tailRx == headRx )
+//     {
+//         tailRx++;           //drop the oldest data
+//         tailRx = tailRx%UART_RX_BUFF_SIZE;
+//     }    
+// }
+
 ISR(USART_RXC_vect)
 {
-    uint8_t lastData;
+    static uint8_t lastData;
+    uint8_t data;
+    static uint8_t dataPtr;
+    static uint8_t command;
+    
+    static enum
+    {
+        eHeader,    //0xAA
+        eCommand,   //{B-blower +,-,value(0..100)}, {P-period of podajnik +,-,value}
+        eData,
+        eEnd,
+        eLast
+    } recState;
 
-    uartRxData[headRx] = UDR;
+    data = UDR;
 
-    if(headRx) lastData = headRx - 1;
-    else lastData = UART_RX_BUFF_SIZE-1;
-    if(uartRxData[lastData] == 0x30 && uartRxData[headRx] == 0x20)
+    if(lastData == 0x30 && data == 0x20)
     {
         // //go to bootloader
         // //WDTCR = 1<<WDE;
@@ -176,14 +217,74 @@ ISR(USART_RXC_vect)
         DDRC |= 0x20;   //PC5
         PORTC &= ~0x20;
     }
+    lastData = data;
 
-
-    headRx++;
-    headRx = headRx%UART_RX_BUFF_SIZE;
-    if( tailRx == headRx )
+    switch(recState)
     {
-        tailRx++;           //drop the oldest data
-        tailRx = tailRx%UART_RX_BUFF_SIZE;
+        default:
+        case eLast:
+            recState = eHeader;
+        case eHeader:
+            // if(data == 0xAA) recState = eCommand;
+            if(data == 'S') recState = eCommand;
+        break;
+
+        case eCommand:
+            if(data == 'B' || data == 'P')
+            {
+                command = data;
+                recState = eData;
+                dataPtr = 0;
+            }
+            else recState = eHeader;
+        break;
+
+        case eData:
+            // if(data == 0x0A) recState = eEnd;
+            if(data == 'E') recState = eEnd;
+            else if( dataPtr > 8) recState = eHeader;
+            else
+            {
+                uartRxData[dataPtr] = data;
+                dataPtr++;
+            }
+        break;
+
+        case eEnd:
+            switch(command)
+            {
+                case 'B':
+                    if(dataPtr == 2)
+                    {
+                        uint8_t tmp;
+
+                        tmp = (uartRxData[0] - '0') * 10;
+                        tmp += uartRxData[1] - '0';
+
+                        //set blower value
+                        temp = tmp;
+                    }
+                    else if( dataPtr == 1)
+                    {
+                        if(uartRxData[0] == '+')
+                        {
+                            temp++;
+                        }
+                        else if(uartRxData[0] == '-')
+                        {
+                             if(temp)temp--;
+                        }
+                        else if(uartRxData[0] >= '0' && uartRxData[0] <= '9')
+                        {
+                             temp = uartRxData[0] - '0';
+                        }
+                        
+                    }
+                    
+                break;
+            }
+            recState = eHeader;
+        break;
     }
 }
 

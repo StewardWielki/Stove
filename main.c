@@ -14,12 +14,13 @@
 uint8_t EEMEM testE = 23;
 /* User defined characters */
 const uint8_t PROGMEM thermometer[] = {4,10,10,10,17,31,31,14};
+volatile int32_t temp=0;
 
 int main (void)
 {
     //int a = -10;
     uint8_t a2;
-    int32_t temp=0;
+    
     
     //PD5
     DDRD |= 0x38;
@@ -57,13 +58,14 @@ sei( );
         _delay_ms (500);
 
 
-        temp = getTick();
+        //temp = getTick();
         lcd_setCursor(0,1);
-        lcd_str_P(PSTR("Temp "));
-        lcd_int16( temp/10 );
+        lcd_str_P(PSTR("Blow "));
+        /*lcd_int16( temp/10 );
         lcd_str_P(PSTR("."));
         lcd_int16( temp%10 );
-        lcd_str_P(PSTR(" C"));
+        lcd_str_P(PSTR(" C"));*/
+        lcd_int32(temp);
 
         SerialP(PSTR("Pamiec flash "));  SerialILn(5);
         // lcd_setCursor(0,1);
