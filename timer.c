@@ -24,7 +24,7 @@ static void timer0Init( void )
 static void timer1Init( void )  /*10 kHz, PWM=100% == zero power, PWM=0% == max power*/
 {
     TCNT1 = 0;
-    TCCR1A = 1<<COM1A1 | 1<<COM1A0; //NORMAL mode
+    TCCR1A = 1<<COM1A1 /*| 1<<COM1A0*/;
     OCR1A = 20; //2.5%
     ICR1 = 400;
     TCCR1B = 1<<WGM13 | 1<<CS10;  //Input Capture Noise Canceler, clk/1

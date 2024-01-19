@@ -16,6 +16,12 @@ uint8_t EEMEM testE = 23;
 const uint8_t PROGMEM thermometer[] = {4,10,10,10,17,31,31,14};
 volatile int32_t temp=0;
 
+
+/*
+PA03 - wipers motor - posuw
+*/
+
+
 int main (void)
 {
     //int a = -10;
@@ -25,6 +31,10 @@ int main (void)
     //PD5
     DDRD |= 0x38;
     PORTD |= 0x38;
+
+    DDRA |= 0x08;
+    PORTA |= 0x08;
+
     timersInit( );
     uartInit();
     lcd_init();
@@ -45,15 +55,15 @@ int main (void)
 
 sei( );
 
-    
+    setBlowerSpeed(10);
 
     while(1)
     {
-        setBlowerSpeed(0);
+        // setBlowerSpeed(0);
         PORTD &= ~0x10;
         _delay_ms (500);
         
-        setBlowerSpeed(100);
+        // setBlowerSpeed(100);
         PORTD |= 0x10;
         _delay_ms (500);
 
@@ -66,7 +76,7 @@ sei( );
         lcd_int16( temp%10 );
         lcd_str_P(PSTR(" C"));*/
         lcd_int32(temp);
-
+        
         SerialP(PSTR("Pamiec flash "));  SerialILn(5);
         // lcd_setCursor(0,1);
         // lcd_str("    ");
