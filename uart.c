@@ -321,7 +321,7 @@ ISR(USART_RXC_vect)
                     {
                         if(uartRxData[0] == '+')
                         {
-                            movePeriod++;
+                            if( movePeriod < MOVE_PERIOD_MAX ) movePeriod++;
                         }
                         else if(uartRxData[0] == '-')
                         {
