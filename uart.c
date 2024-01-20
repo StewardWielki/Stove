@@ -3,6 +3,8 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
+#include <avr/eeprom.h>
+#include "uart.h"
 
 #define UART_TX_BUFF_SIZE   128
 volatile uint8_t tailRx = 0;
@@ -14,7 +16,11 @@ volatile uint8_t tailTx = 0;
 volatile uint8_t headTx = 0;
 uint8_t uartRxData[UART_RX_BUFF_SIZE];
 
-extern volatile int32_t temp;
+extern volatile uint8_t blowerSpeed;
+extern uint8_t EEMEM eeBlowerSpeed;
+extern uint8_t blowerChange;
+extern uint16_t EEMEM eeMovePeriod;
+extern volatile uint16_t movePeriod;
 
 void uartInit( void )
 {
@@ -262,24 +268,72 @@ ISR(USART_RXC_vect)
                         tmp += uartRxData[1] - '0';
 
                         //set blower value
-                        temp = tmp;
+                        blowerSpeed = tmp;
+                        eeprom_write_byte( &eeBlowerSpeed, blowerSpeed);
+                        blowerChange = 1;
                     }
                     else if( dataPtr == 1)
                     {
                         if(uartRxData[0] == '+')
                         {
-                            temp++;
+                            blowerSpeed++;
                         }
                         else if(uartRxData[0] == '-')
                         {
-                             if(temp)temp--;
+                             if(blowerSpeed)blowerSpeed--;
                         }
                         else if(uartRxData[0] >= '0' && uartRxData[0] <= '9')
                         {
-                             temp = uartRxData[0] - '0';
+                             blowerSpeed = uartRxData[0] - '0';
                         }
-                        
+                        eeprom_write_byte( &eeBlowerSpeed, blowerSpeed);
+                        blowerChange = 1;
                     }
+                    
+                    
+                break;
+
+                case 'P':
+                    if(dataPtr == 3)
+                    {
+                        uint16_t tmp;
+                        
+                        tmp = (uartRxData[0] - '0') * 100;
+                        tmp += (uartRxData[1] - '0') * 10;
+                        tmp += uartRxData[2] - '0';
+
+                        if( tmp > MOVE_PERIOD_MAX ) tmp = MOVE_PERIOD_MAX;
+                        movePeriod = tmp;
+                        eeprom_write_word( &eeMovePeriod, movePeriod);
+                    }
+                    if(dataPtr == 2)
+                    {
+                        uint8_t tmp;
+
+                        tmp = (uartRxData[0] - '0') * 10;
+                        tmp += uartRxData[1] - '0';
+
+                        //set blower value
+                        movePeriod = tmp;
+                        eeprom_write_word( &eeMovePeriod, movePeriod);
+                    }
+                    else if( dataPtr == 1)
+                    {
+                        if(uartRxData[0] == '+')
+                        {
+                            movePeriod++;
+                        }
+                        else if(uartRxData[0] == '-')
+                        {
+                             if(movePeriod)movePeriod--;
+                        }
+                        else if(uartRxData[0] >= '0' && uartRxData[0] <= '9')
+                        {
+                             movePeriod = uartRxData[0] - '0';
+                        }
+                        eeprom_write_word( &eeMovePeriod, movePeriod);
+                    }
+                    
                     
                 break;
             }

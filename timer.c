@@ -3,6 +3,10 @@
 #include <avr/interrupt.h>
 
 volatile uint32_t tick = 0;
+#define TIMERS_ACCOUNT 8
+volatile uint32_t timers[ TIMERS_ACCOUNT ];
+volatile uint8_t timersIndex = 0;
+
 
 /*
 Timers:
@@ -13,7 +17,7 @@ T2 - keyboard scan tick
 
 static void timer0Init( void )
 {
-    TCCR0 = 1<<WGM01 | 1<<CS01 | 1<<CS00;  //CTC mode, prescaller = 64
+    //TCCR0 = 1<<WGM01 | 1<<CS01 | 1<<CS00;  //CTC mode, prescaller = 64
     TCNT0 = 0;
     OCR0 = 125;
     TCCR0 = 1 <<WGM01 | 1<<CS01 | 1<<CS00;  //CTC mode, prescaller = 64
@@ -52,6 +56,10 @@ void timersInit( void )
 ISR(TIMER0_COMP_vect)
 {
     tick++;
+    for( uint8_t i = 0; i < timersIndex; i++ )
+    {
+        if(timers[ i ]) timers[ i ]--;
+    }
 }
 /*
 ISR(TIMER2_OVF_vect)
@@ -75,6 +83,7 @@ uint32_t getTick( void )
 {
     return tick;
 }
+
 
 /*ISR(TIMER1_CAPT_vect)       //max 800 uP cycles
 {
@@ -108,3 +117,55 @@ void setBlowerSpeed( uint8_t duty )
     tmp /= 100;
     OCR1A = tmp; 
 }
+
+
+
+
+uint32_t* createTimer( void )
+{
+    uint32_t *result;
+
+    if( timersIndex < TIMERS_ACCOUNT )
+    {
+        result = (uint32_t *)&timers[timersIndex];
+        timersIndex++;
+    }
+    else result = NULL;
+
+    return result;
+}
+
+void setTimer( uint32_t *timer, uint32_t value )
+{
+    *timer = value;
+}
+
+uint8_t checkIfTimerExpired( uint32_t *timer )
+{
+    if( *timer ) return 0;
+    else return 1;
+}
+
+/*void setTimePoint( uint32_t *timePoint )
+{
+    *timePoint = tick;
+}
+
+uint8_t checkTimeDiff( uint32_t timePoint, uint32_t time )
+{
+    uint8_t result;
+    uint32_t actTime;
+    uint32_t tmp;
+
+    actTime = tick;
+    if(timePoint < actTime) tmp = actTime - timePoint;
+    else
+    {
+        tmp = 0xFFFFFFFF - timePoint;
+        tmp += actTime;
+    }
+    if( tmp  > time ) result = 1;
+    else result = 0;
+
+    return result;
+}*/

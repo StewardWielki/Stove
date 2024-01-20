@@ -16,4 +16,6 @@ void SerialLn( char *text );
 void SerialP( const char *text );
 void SerialPLn( const char *text );
 
+#define MOVE_PERIOD_MAX 300
+
 #endif  //_UART_
