@@ -21,6 +21,8 @@ volatile uint8_t blowerSpeed = 0;
 volatile uint8_t movePeriodChange = 1;
 volatile uint16_t movePeriod = 59;
 
+uint16_t moveCnt = 0;
+
 /* User defined characters */
 const uint8_t PROGMEM thermometer[] = {4,10,10,10,17,31,31,14};
 
@@ -59,6 +61,10 @@ int main (void)
     //PD5
     DDRD |= 0x38;
     PORTD |= 0x38;
+
+    //UART Rx - pull up
+    DDRD &= ~(1 << PD0);
+    PORTD |= 1<< PD0;
 
     DDRA |= 1<<PA3 | 1<<PA2 | 1<<PA1;
     PORTA = 1<<PA3 | 1<<PA2 | 1<<PA1;
@@ -120,6 +126,7 @@ sei( );
             setTimer( timerMovePeriod, tmp );
             PORTA &= ~(1<<3);
             setTimer( timerMoveTime, MOVE_TIME );
+            moveCnt++;
         }
         if( checkIfTimerExpired(timerMoveTime) )
         {
@@ -135,17 +142,19 @@ sei( );
             uint16_t tmp;
 
             SerialP(PSTR("Blower: ")); SerialU(blowerSpeed);
-            SerialP(PSTR(" Period: ")); SerialILn(movePeriod);
+            SerialP(PSTR(" Period: ")); SerialU(movePeriod);
+            SerialP(PSTR(" Counter: ")); SerialILn(moveCnt);
 
             tmp = (uint16_t)(*timerMovePeriod / 1000);
             //tmp /= 1000;
             lcd_setCursor(0,0);
             lcd_str_P(PSTR("T               "));
-            lcd_setCursor(2,0);
+            lcd_setCursor(1,0);
             lcd_uint16(tmp);
-            lcd_str_P(PSTR(" s P "));
+            lcd_str_P(PSTR("s, P"));
             lcd_uint16(movePeriod);
-            lcd_str_P(PSTR(" s"));
+            lcd_str_P(PSTR("s, C"));
+            lcd_uint16(moveCnt);
 
             setTimer( timerDebug, 1000);
         }
